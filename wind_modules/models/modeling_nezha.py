@@ -63,7 +63,7 @@ def load_tf_weights_in_nezha(model, config, tf_checkpoint_path):
         raise
 
     tf_path = os.path.abspath(tf_checkpoint_path)
-    logger.info("Converting TensorFlow checkpoint from {}".format(tf_path))
+    logger.info(f"Converting TensorFlow checkpoint from {tf_path}")
     # Load weights from TF model
     init_vars = tf.train.list_variables(tf_path)
     names = []
@@ -83,7 +83,7 @@ def load_tf_weights_in_nezha(model, config, tf_checkpoint_path):
                       "global_step", "good_steps", "loss_scale", 'bad_steps']
                 for n in name
         ):
-            logger.info("Skipping {}".format("/".join(name)))
+            logger.info(f'Skipping {"/".join(name)}')
             continue
         pointer = model
         for m_name in name:
@@ -91,19 +91,17 @@ def load_tf_weights_in_nezha(model, config, tf_checkpoint_path):
                 scope_names = re.split(r"_(\d+)", m_name)
             else:
                 scope_names = [m_name]
-            if scope_names[0] == "kernel" or scope_names[0] == "gamma":
+            if scope_names[0] in ["kernel", "gamma"] or scope_names[0] not in ["output_bias", "beta"] and scope_names[0] == "output_weights":
                 pointer = getattr(pointer, "weight")
-            elif scope_names[0] == "output_bias" or scope_names[0] == "beta":
+            elif scope_names[0] in ["output_bias", "beta"]:
                 pointer = getattr(pointer, "bias")
-            elif scope_names[0] == "output_weights":
-                pointer = getattr(pointer, "weight")
             elif scope_names[0] == "squad":
                 pointer = getattr(pointer, "classifier")
             else:
                 try:
                     pointer = getattr(pointer, scope_names[0])
                 except AttributeError:
-                    logger.info("Skipping {}".format("/".join(name)))
+                    logger.info(f'Skipping {"/".join(name)}')
                     continue
             if len(scope_names) >= 2:
                 num = int(scope_names[1])
@@ -119,7 +117,7 @@ def load_tf_weights_in_nezha(model, config, tf_checkpoint_path):
         except AssertionError as e:
             e.args += (pointer.shape, array.shape)
             raise
-        logger.info("Initialize PyTorch weight {}".format(name))
+        logger.info(f"Initialize PyTorch weight {name}")
         pointer.data = torch.from_numpy(array)
     return model
 

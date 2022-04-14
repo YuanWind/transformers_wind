@@ -10,22 +10,11 @@ logger = logging.get_logger(__name__.replace('_', ''))
 @dataclass
 class MyTrainingArguments(TrainingArguments):
     
-    adversarival_type: str = field(
-        default= '',
-        metadata={"help": "['','fgm','pgd']."},
-    )
-    fgm_e: float = field(
-        default=1.0, metadata={"help": "FGM epsilon."}
-    )
-    pgd_e: float = field(
-        default=1.0, metadata={"help": "PGD epsilon."}
-    )
-    pgd_a: float = field(
-        default=1.0, metadata={"help": "PGD alpha."}
-    )
-    pgd_K: int = field(
-        default=3, metadata={"help": "PGD's K."}
-    )
+    adversarival_type: str = field(default= "", metadata={"help": "['','fgm','pgd']."})
+    fgm_e: float = field(default=1.0, metadata={"help": "FGM epsilon."})
+    pgd_e: float = field(default=1.0, metadata={"help": "PGD epsilon."})
+    pgd_a: float = field(default=1.0, metadata={"help": "PGD alpha."})
+    pgd_K: int = field(default=3, metadata={"help": "PGD's K."})
     
     
 class MyConfigs():
@@ -94,7 +83,7 @@ class MyConfigs():
         self.output_dir = self.output_dir
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
-        # self.best_model_dir = 
+
         if not os.path.exists(self.best_model_file.rsplit('/', 1)[0]):
             os.makedirs(self.best_model_file.rsplit('/', 1)[0])
             
