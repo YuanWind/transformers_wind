@@ -1,0 +1,20 @@
+nohup: ignoring input
+/home/yywind/code/transformers_wind/transformers/tokenization_utils_base.py:1656: FutureWarning: Calling BertTokenizer.from_pretrained() with the path to a single file or url is deprecated and won't be possible anymore in v5. Use a model identifier or the path to a directory instead.
+  FutureWarning,
+Some weights of the model checkpoint at data_transformers_wind/my_nezha_cn were not used when initializing NeZhaForMaskedLM: ['cls.seq_relationship.weight', 'cls.seq_relationship.bias']
+- This IS expected if you are initializing NeZhaForMaskedLM from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing NeZhaForMaskedLM from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Some weights of NeZhaForMaskedLM were not initialized from the model checkpoint at data_transformers_wind/my_nezha_cn and are newly initialized: []
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+/home/yywind/code/transformers_wind/transformers/data/datasets/language_modeling.py:126: FutureWarning: This dataset will be removed from the library soon, preprocessing should be handled with the 🤗 Datasets library. You can have a look at this example script for pointers: https://github.com/huggingface/transformers/blob/main/examples/pytorch/language-modeling/run_mlm.py
+  FutureWarning,
+Start to build dataset...
+  0%|          | 0/1000000 [00:00<?, ?it/s] 25%|██▌       | 253390/1000000 [00:00<00:00, 2533443.36it/s] 55%|█████▍    | 547767/1000000 [00:00<00:00, 2774663.32it/s] 85%|████████▌ | 851842/1000000 [00:00<00:00, 2896050.15it/s]100%|██████████| 1000000/1000000 [00:00<00:00, 2875243.10it/s]
+Start to build MLM模型的数据DataCollator...
+Start to train...
+Traceback (most recent call last):
+  File "pretrain.py", line 63, in <module>
+    trainer.train(True)
+  File "/home/yywind/code/transformers_wind/transformers/trainer.py", line 1166, in train
+    raise ValueError(f"No valid checkpoint found in output directory ({args.output_dir})")
+ValueError: No valid checkpoint found in output directory (data_transformers_wind/outputs)
