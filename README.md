@@ -7,6 +7,10 @@
 torch==1.8.0
 ```
 
-## 主要特征
-1. trainer 里加上 FGM、PGD；
+## 说明
+1. 各分支保存一些比赛、论文代码的说明和总结等；
 2. 
+## 主要特征
+1. trainer 里加上 FGM、PGD；（借鉴了https://github.com/xiangking/ark-nlp/blob/main/ark_nlp/factory/utils/attack.py）
+2. 增加了 NeZha，来源及相关下载：https://github.com/lonePatient/NeZha_Chinese_PyTorch
+3. 
