@@ -1,7 +1,15 @@
+# -*- encoding: utf-8 -*-
+'''
+@File    :   modeling_nezha.py
+@Time    :   2022/04/18 09:02:42
+@Author  :   Yuan Wind
+@Desc    :   None
+'''
+import logging
+logger = logging.getLogger(__name__.replace('_', ''))
 import math
 import os
 import re
-import logging
 import torch
 
 from torch import nn
@@ -40,7 +48,6 @@ from transformers.file_utils import (
     add_start_docstrings_to_model_forward
 )
 
-logger = logging.getLogger(__name__)
 
 _CONFIG_FOR_DOC = "NeZhaConfig"
 _TOKENIZER_FOR_DOC = "NeZhaTokenizer"
@@ -63,7 +70,7 @@ def load_tf_weights_in_nezha(model, config, tf_checkpoint_path):
         raise
 
     tf_path = os.path.abspath(tf_checkpoint_path)
-    logger.info(f"Converting TensorFlow checkpoint from {tf_path}")
+    logger.info("Converting TensorFlow checkpoint from {}".format(tf_path))
     # Load weights from TF model
     init_vars = tf.train.list_variables(tf_path)
     names = []
@@ -83,7 +90,7 @@ def load_tf_weights_in_nezha(model, config, tf_checkpoint_path):
                       "global_step", "good_steps", "loss_scale", 'bad_steps']
                 for n in name
         ):
-            logger.info(f'Skipping {"/".join(name)}')
+            logger.info("Skipping {}".format("/".join(name)))
             continue
         pointer = model
         for m_name in name:
@@ -91,17 +98,19 @@ def load_tf_weights_in_nezha(model, config, tf_checkpoint_path):
                 scope_names = re.split(r"_(\d+)", m_name)
             else:
                 scope_names = [m_name]
-            if scope_names[0] in ["kernel", "gamma"] or scope_names[0] not in ["output_bias", "beta"] and scope_names[0] == "output_weights":
+            if scope_names[0] == "kernel" or scope_names[0] == "gamma":
                 pointer = getattr(pointer, "weight")
-            elif scope_names[0] in ["output_bias", "beta"]:
+            elif scope_names[0] == "output_bias" or scope_names[0] == "beta":
                 pointer = getattr(pointer, "bias")
+            elif scope_names[0] == "output_weights":
+                pointer = getattr(pointer, "weight")
             elif scope_names[0] == "squad":
                 pointer = getattr(pointer, "classifier")
             else:
                 try:
                     pointer = getattr(pointer, scope_names[0])
                 except AttributeError:
-                    logger.info(f'Skipping {"/".join(name)}')
+                    logger.info("Skipping {}".format("/".join(name)))
                     continue
             if len(scope_names) >= 2:
                 num = int(scope_names[1])
@@ -117,7 +126,7 @@ def load_tf_weights_in_nezha(model, config, tf_checkpoint_path):
         except AssertionError as e:
             e.args += (pointer.shape, array.shape)
             raise
-        logger.info(f"Initialize PyTorch weight {name}")
+        logger.info("Initialize PyTorch weight {}".format(name))
         pointer.data = torch.from_numpy(array)
     return model
 
@@ -370,8 +379,6 @@ class NeZhaLayer(nn.Module):
 class NeZhaEncoder(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.output_attentions = config.output_attentions
-        self.output_hidden_states = config.output_hidden_states
         self.layer = nn.ModuleList([NeZhaLayer(config) for _ in range(config.num_hidden_layers)])
 
     def forward(
@@ -381,26 +388,29 @@ class NeZhaEncoder(nn.Module):
             head_mask=None,
             encoder_hidden_states=None,
             encoder_attention_mask=None,
+            output_attentions = False,
+            output_hidden_states = False
+            
     ):
         all_hidden_states = ()
         all_attentions = ()
         for i, layer_module in enumerate(self.layer):
-            if self.output_hidden_states:
+            if output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states,)
             layer_outputs = layer_module(
                 hidden_states, attention_mask, head_mask[i], encoder_hidden_states, encoder_attention_mask
             )
             hidden_states = layer_outputs[0]
-            if self.output_attentions:
+            if output_attentions:
                 all_attentions = all_attentions + (layer_outputs[1],)
         # Add last layer
-        if self.output_hidden_states:
+        if output_hidden_states:
             all_hidden_states = all_hidden_states + (hidden_states,)
 
         outputs = (hidden_states,)
-        if self.output_hidden_states:
+        if output_hidden_states:
             outputs = outputs + (all_hidden_states,)
-        if self.output_attentions:
+        if output_attentions:
             outputs = outputs + (all_attentions,)
         return outputs  # last-layer hidden state, (all hidden states), (all attentions)
 

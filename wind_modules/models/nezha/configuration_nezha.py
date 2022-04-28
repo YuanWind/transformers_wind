@@ -1,4 +1,12 @@
-
+# -*- encoding: utf-8 -*-
+'''
+@File    :   configuration_nezha.py
+@Time    :   2022/04/18 09:02:15
+@Author  :   Yuan Wind
+@Desc    :   None
+'''
+import logging
+logger = logging.getLogger(__name__.replace('_', ''))
 from transformers import PretrainedConfig
 
 NEZHA_PRETRAINED_CONFIG_ARCHIVE_MAP = {}

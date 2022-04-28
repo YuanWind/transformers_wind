@@ -1,26 +1,46 @@
+# -*- encoding: utf-8 -*-
+'''
+@File    :   Config.py
+@Time    :   2022/04/18 09:01:00
+@Author  :   Yuan Wind
+@Desc    :   None
+'''
+import logging
+logger = logging.getLogger(__name__.replace('_', ''))
 import json
 from transformers import TrainingArguments
-from transformers.utils import logging
 import os
 from configparser import ConfigParser, ExtendedInterpolation
 from dataclasses import dataclass, field
 
-logger = logging.get_logger(__name__.replace('_', ''))
-
 @dataclass
 class MyTrainingArguments(TrainingArguments):
     
-    adversarival_type: str = field(default= "", metadata={"help": "['','fgm','pgd']."})
-    fgm_e: float = field(default=1.0, metadata={"help": "FGM epsilon."})
-    pgd_e: float = field(default=1.0, metadata={"help": "PGD epsilon."})
-    pgd_a: float = field(default=1.0, metadata={"help": "PGD alpha."})
-    pgd_K: int = field(default=3, metadata={"help": "PGD's K."})
+    adversarival_type: str = field(
+        default= None,
+        metadata={"help": "[None,'fgm','pgd']."},
+    )
+    fgm_e: float = field(
+        default=1.0, metadata={"help": "FGM epsilon."}
+    )
+    pgd_e: float = field(
+        default=1.0, metadata={"help": "PGD epsilon."}
+    )
+    pgd_a: float = field(
+        default=1.0, metadata={"help": "PGD alpha."}
+    )
+    pgd_k: int = field(
+        default=3, metadata={"help": "PGD's K."}
+    )
+    emb_name: str = field(
+        default='emb', metadata={"help": "对那个embedding进行扰动."}
+    )
     
     
 class MyConfigs():
     def __init__(self, config_file, extra_args=None):
-        """初始化config，优先级为 命令行 > config file > 默认值
-
+        """
+        初始化config，优先级为 命令行 > config file > 默认值，可以随意在config文件或者命令行里加自定义的参数。
         Args:
             config_file (_type_): _description_
             extra_args (_type_, optional): _description_. Defaults to None.
@@ -35,7 +55,12 @@ class MyConfigs():
                     if k in extra_args:
                         v = type(v)(extra_args[k])
                         config.set(section, k, v)
-
+            if len(extra_args)>0:
+                if 'CMD' not in config.sections():
+                    config.add_section('CMD')
+                for k,v in extra_args.items():
+                    config.set('CMD',k,v)
+                    
         self._config = config
         self.train_args_dict={}
         for section in config.sections():
@@ -47,7 +72,7 @@ class MyConfigs():
 
         self.post_init()
 
-    def get_type(self, k, v):
+    def get_type(self, v):
         """
         设置值的类型
         """
@@ -83,7 +108,7 @@ class MyConfigs():
         self.output_dir = self.output_dir
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
-
+        # self.best_model_dir = 
         if not os.path.exists(self.best_model_file.rsplit('/', 1)[0]):
             os.makedirs(self.best_model_file.rsplit('/', 1)[0])
             
@@ -114,4 +139,4 @@ class MyConfigs():
 
 if __name__ == '__main__':
     config = MyConfigs('debug.cfg')
-    print(config.log_file)
+    logging.warning(config.log_file)

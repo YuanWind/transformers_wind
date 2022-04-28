@@ -1,7 +1,48 @@
+# -*- encoding: utf-8 -*-
+'''
+@File    :   Adversarial.py
+@Time    :   2022/04/18 09:03:12
+@Author  :   Yuan Wind
+@Desc    :   None
+'''
+import logging
+logger = logging.getLogger(__name__.replace('_', ''))
 import torch
 
+class EMA():
+    def __init__(self, model, decay):
+        self.model = model
+        self.decay = decay
+        self.shadow = {}
+        self.backup = {}
 
-class FGM(object):
+    def register(self):
+        for name, param in self.model.named_parameters():
+            if param.requires_grad:
+                self.shadow[name] = param.data.clone()
+
+    def update(self):
+        for name, param in self.model.named_parameters():
+            if param.requires_grad:
+                assert name in self.shadow
+                new_average = (1.0 - self.decay) * param.data + self.decay * self.shadow[name]
+                self.shadow[name] = new_average.clone()
+
+    def apply_shadow(self):
+        for name, param in self.model.named_parameters():
+            if param.requires_grad:
+                assert name in self.shadow
+                self.backup[name] = param.data
+                param.data = self.shadow[name]
+
+    def restore(self):
+        for name, param in self.model.named_parameters():
+            if param.requires_grad:
+                assert name in self.backup
+                param.data = self.backup[name]
+        self.backup = {}
+        
+class FGM():
     """
     基于FGM算法的攻击机制
 
@@ -47,7 +88,7 @@ class FGM(object):
 
     def restore(
         self,
-        emb_name='word_embeddings'
+        emb_name='emb'
     ):
         for name, param in self.module.named_parameters():
             if param.requires_grad and emb_name in name:
@@ -56,7 +97,7 @@ class FGM(object):
         self.backup = {}
 
 
-class PGD(object):
+class PGD():
     """
     基于PGD算法的攻击机制
 
@@ -112,7 +153,7 @@ class PGD(object):
                     param.data.add_(r_at)
                     param.data = self.project(name, param.data, epsilon)
 
-    def restore(self, emb_name='emb.'):
+    def restore(self, emb_name='emb'):
         # emb_name这个参数要换成你模型中embedding的参数名
         for name, param in self.module.named_parameters():
             if param.requires_grad and emb_name in name:
@@ -129,9 +170,12 @@ class PGD(object):
     def backup_grad(self):
         for name, param in self.module.named_parameters():
             if param.requires_grad:
-                self.grad_backup[name] = param.grad.clone()
+                if  param.grad is not None:
+                    self.grad_backup[name] = param.grad.clone()
+                # else:
+                #     logger.warning(f'{name} 的 param 没有梯度！')
 
     def restore_grad(self):
         for name, param in self.module.named_parameters():
-            if param.requires_grad:
+            if param.requires_grad and name in self.grad_backup:
                 param.grad = self.grad_backup[name]
